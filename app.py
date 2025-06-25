@@ -1,23 +1,26 @@
-# stamlit guess if text is human or AI
+# File: app.py (rename from streamlit_app.py)
+# my class project
+# guess if text is human or AI
 
-import streamlit as st 
+import streamlit as st # for app
 import joblib # load stuff
 import numpy as np # numbers
 from PyPDF2 import PdfReader # read pdfs
 import docx # read word files
 import matplotlib.pyplot as plt # make charts
-from io import BytesIO # file 
+from io import BytesIO # file stuff
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer # pdf reports
 from reportlab.lib.styles import getSampleStyleSheet # pdf styles
-import re 
+import re # text patterns
 
 # load my AI tools
+# loads once so fast
 @st.cache_resource
 def load_my_ai_tools():
-    # word to number 
+    # word to number tool
     vec_tool = joblib.load("models/vectorizer.joblib")
     
-    # my 3  models
+    # my 3 AI models
     svm_model = joblib.load("models/svm_model.joblib")
     tree_model  = joblib.load("models/tree_model.joblib")
     ada_model  = joblib.load("models/ada_model.joblib")
@@ -44,7 +47,7 @@ def get_docx_text(file):
     doc = docx.Document(file)
     return "\n".join([para.text for para in doc.paragraphs])
 
-# explain model guesses
+# explain model guess
 def explain_guess(model, vec_tool, text, guess_label):
     # text to numbers
     text_nums = vec_tool.transform([text])
@@ -52,12 +55,12 @@ def explain_guess(model, vec_tool, text, guess_label):
     feature_words = vec_tool.get_feature_names_out()
 
     # how model shows important words
-    if hasattr(model, 'coef_'):
+    if hasattr(model, 'coef_'): # for SVM brain
         if hasattr(model.coef_, 'toarray'):
             import_vals = np.abs(model.coef_.toarray()[0])
         else:
             import_vals = np.abs(model.coef_[0])
-    elif hasattr(model, 'feature_importances_'):
+    elif hasattr(model, 'feature_importances_'): # for tree brains
         import_vals = model.feature_importances_
     else:
         st.warning("model cant tell why it guessed that")
@@ -80,7 +83,7 @@ def explain_guess(model, vec_tool, text, guess_label):
     ax.set_xlabel('Influence Score')
     plt.tight_layout()
 
-    # explanation
+    # my simple explanation
     explain_txt = ""
     if guess_label == 'AI-written':
         explain_txt = (
@@ -100,25 +103,26 @@ def explain_guess(model, vec_tool, text, guess_label):
 
     return fig, explain_txt
 
-# get text info
+# get text facts like word count
 def get_text_info(text):
     words = re.findall(r'\b\w+\b', text.lower())
     sentences = re.split(r'[.!?]\s*', text)
     sentences = [s for s in sentences if s.strip()]
 
-    word_count = len(words)
-    sentence_count = len(sentences)
-    avg_word_len = np.mean([len(word) for word in words]) if word_count > 0 else 0.0
+    total_words = len(words)
+    total_sentences = len(sentences)
+    
+    avg_word_len = np.mean([len(word) for word in words]) if total_words > 0 else 0.0
 
-    # readability
-    avg_words_per_sent = word_count / sentence_count if sentence_count > 0 else 0.0
+    # simple readability
+    avg_words_per_sent = total_words / total_sentences if total_sentences > 0 else 0.0
     est_syllables_per_word = 1.6 # my guess
 
     read_score = 206.835 - (1.015 * avg_words_per_sent) - (84.6 * est_syllables_per_word)
 
     return {
-        "Total Words": word_count,
-        "Sentences": sentence_count,
+        "Total Words": total_words,
+        "Sentences": total_sentences,
         "Avg Word Length": f"{avg_word_len:.2f} chars",
         "Readability (my guess)": f"{read_score:.2f}"
     }
@@ -149,15 +153,17 @@ def make_pdf_report(text, label, probs, text_info, overall_model_data):
         story.append(Paragraph(f'<b>{key}</b>: {value}', styles['Normal']))
     story.append(Spacer(1, 12))
 
-    story.append(Paragraph('Model Overall Results:', styles['Heading2']))
+    story.append(Paragraph('How Models Did Overall:', styles['Heading2']))
     story.append(Paragraph(
         "how models did in my tests "
         "AUC score good higher is better", 
         styles['Normal']
     ))
+    # FIX IS ON THE NEXT LINE: Changed 'Model Name' to 'Model'
     for item in overall_model_data:
-        story.append(Paragraph(f"<b>{item['Model Name']}</b>: AUC = {item['AUC']}", styles['Normal']))
+        story.append(Paragraph(f"<b>{item['Model']}</b>: AUC = {item['AUC']}", styles['Normal'])) # Corrected key here
     story.append(Spacer(1, 12))
+
 
     doc.build(story)
     pdf_buffer.seek(0)
@@ -166,7 +172,7 @@ def make_pdf_report(text, label, probs, text_info, overall_model_data):
 # main streamlit app part
 st.sidebar.title('Controls')
 
-# pick AI model
+# user picks AI model
 chosen_model_name = st.sidebar.selectbox('Pick AI model:', list(all_ai_models.keys()))
 
 # upload file
@@ -257,7 +263,7 @@ with st.expander('How models did overall'):
         "SVM AdaBoost top students"
     )
 
-# download
+# other options download
 if st.checkbox('Show exact probabilities'):
     st.write({'Human Prob': probs[0], 'AI Prob': probs[1]})
 

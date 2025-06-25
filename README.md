@@ -15,7 +15,7 @@ How to Run My Project
 you need python 3 installed
 1. Get My Code
 first get the project files
-git clone <YOUR_REPOSITORY_URL_HERE> 
+git clone https://github.com/hari25030/AI-Human-Text-Detector
 cd HariAIclassifier
 
 
