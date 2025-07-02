@@ -1,5 +1,4 @@
-# File: app.py (rename from streamlit_app.py)
-# my class project
+# File: app.py 
 # guess if text is human or AI
 
 import streamlit as st # for app
@@ -14,30 +13,30 @@ from reportlab.lib.styles import getSampleStyleSheet # pdf styles
 import re # text patterns
 import pickle # for loading tokenizer
 
-# --- DEEP LEARNING IMPORTS ---
+# DEEP LEARNING IMPORTS 
 import torch
 import torch.nn as nn
 from tensorflow.keras.preprocessing.text import Tokenizer # For loading tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences # For padding sequences
 
-# --- Global constants for DL models (match notebook) ---
+# Global constants for DL models 
 MAX_WORDS = 10000
 MAX_LEN = 250
 EMBEDDING_DIM = 128
 HIDDEN_DIM_DL = 256 # For LSTM/RNN
-# NUM_CLASSES = 2 # This is the conceptual number of classes, but DL model output for BCEWithLogitsLoss is 1
 
-# Define Deep Learning Model Architectures (same as in notebook)
+
+# Define Deep Learning Model Architectures 
 # CNN Brain
 class CNNClassifier(nn.Module):
-    # FIX: Changed num_classes to num_classes_output, and default to 1
+    
     def __init__(self, vocab_size, embedding_dim, num_classes_output=1, max_len=MAX_LEN):
         super(CNNClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.conv1 = nn.Conv1d(in_channels=embedding_dim, out_channels=128, kernel_size=5)
         self.relu = nn.ReLU()
         self.pool1 = nn.MaxPool1d(kernel_size=max_len - 5 + 1)
-        self.fc = nn.Linear(128, num_classes_output) # FIX: Output is 1 for binary classification
+        self.fc = nn.Linear(128, num_classes_output) 
 
     def forward(self, text):
         embedded = self.embedding(text).permute(0, 2, 1)
@@ -47,12 +46,12 @@ class CNNClassifier(nn.Module):
 
 # LSTM Brain
 class LSTMClassifier(nn.Module):
-    # FIX: Changed num_classes to num_classes_output, and default to 1
+    
     def __init__(self, vocab_size, embedding_dim, hidden_dim, num_classes_output=1):
         super(LSTMClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, num_classes_output) # FIX: Output is 1 for binary classification
+        self.fc = nn.Linear(hidden_dim, num_classes_output) 
 
     def forward(self, text):
         embedded = self.embedding(text)
@@ -61,12 +60,12 @@ class LSTMClassifier(nn.Module):
 
 # RNN Brain
 class RNNClassifier(nn.Module):
-    # FIX: Changed num_classes to num_classes_output, and default to 1
+    
     def __init__(self, vocab_size, embedding_dim, hidden_dim, num_classes_output=1):
         super(RNNClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.rnn = nn.RNN(embedding_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, num_classes_output) # FIX: Output is 1 for binary classification
+        self.fc = nn.Linear(hidden_dim, num_classes_output) 
 
     def forward(self, text):
         embedded = self.embedding(text)
@@ -74,7 +73,7 @@ class RNNClassifier(nn.Module):
         return self.fc(hidden.squeeze(0))
 
 # load my AI tools
-# loads once so fast
+
 @st.cache_resource
 def load_my_ai_tools():
     # word to number tool for ML models
@@ -90,8 +89,8 @@ def load_my_ai_tools():
         dl_tokenizer = pickle.load(f)
 
     # Load my 3 Deep Learning models
-    # Need to create empty models first, then load saved "brains"
-    # FIX: Pass num_classes_output=1 to the DL model constructors
+    
+    
     cnn_model_loaded = CNNClassifier(MAX_WORDS, EMBEDDING_DIM, num_classes_output=1, max_len=MAX_LEN)
     cnn_model_loaded.load_state_dict(torch.load('models/cnn_model.pth', map_location=torch.device('cpu')))
     cnn_model_loaded.eval() # Set to evaluation mode
@@ -133,12 +132,11 @@ def get_docx_text(file):
     doc = docx.Document(file)
     return "\n".join([para.text for para in doc.paragraphs])
 
-# clean text (same as in notebook)
+# clean text 
 def clean_text_for_prediction(text):
     text = text.lower()
     text = re.sub(r'[^a-z\s]', '', text)
     # No stopwords or lemmatization here to match how raw text is tokenized for DL models
-    # If your notebook removed stopwords/lemmas BEFORE tokenization for DL, you'd add it here.
     return text
 
 # explain model guess for ML (TF-IDF based)
@@ -154,7 +152,7 @@ def explain_ml_guess(model, vec_tool, text, guess_label):
             import_vals = np.abs(model.coef_.toarray()[0])
         else:
             import_vals = np.abs(model.coef_[0])
-    elif hasattr(model, 'feature_importances_'): # for tree brains
+    elif hasattr(model, 'feature_importances_'): # for tree 
         import_vals = model.feature_importances_
     else:
         st.warning("model cant tell why it guessed that")
@@ -197,7 +195,7 @@ def explain_ml_guess(model, vec_tool, text, guess_label):
 
     return fig, explain_txt
 
-# Simplified explanation for DL models (feature importance is harder to visualize directly)
+# Simplified explanation for DL models 
 def explain_dl_guess(guess_label):
     explain_txt = ""
     if guess_label == 'AI-written':
@@ -214,7 +212,7 @@ def explain_dl_guess(guess_label):
             "They learned from lots of human text how humans usually write. "
             "This model saw patterns that look like human writing."
         )
-    return None, explain_txt # No direct feature importance chart for DL here
+    return None, explain_txt 
 
 
 # get text facts like word count
@@ -258,7 +256,7 @@ def make_pdf_report(text, label, probs, text_info, overall_model_data):
 
     story.append(Paragraph('App Guess:', styles['Heading2']))
     story.append(Paragraph(f'<b>{label}</b>', styles['Normal']))
-    # FIX: Adjust probability display for DL models (probs will be a single value)
+    # FIX: Adjust probability display for DL models 
     if isinstance(probs, np.ndarray) and probs.ndim == 1 and probs.size == 1: # DL model output
         prob_ai = probs[0]
         prob_human = 1 - prob_ai
@@ -317,7 +315,7 @@ if not input_text:
     st.warning('need text to check')
     st.stop()
 
-# --- Prepare text based on model type ---
+# Prepare text based on model type 
 clean_input_text = clean_text_for_prediction(input_text) # common cleaning
 current_model_info = all_ai_models[chosen_model_name]
 current_model = current_model_info["model"]
@@ -326,7 +324,7 @@ model_type = current_model_info["type"]
 if model_type == "ml":
     # For ML models, use TF-IDF vectorizer
     text_processed_for_model = vector_tool.transform([clean_input_text])
-    # Predict probabilities (already done for ML models)
+    # Predict probabilities 
     probs = current_model.predict_proba(text_processed_for_model)[0]
     # Convert logits to probabilities for DL models
     final_label = 'AI-written' if probs[1] > probs[0] else 'Human-written'
@@ -348,7 +346,7 @@ else: # model_type == "dl"
     # FIX: probs will now be a single value (probability of AI)
     probs = probs_tensor.cpu().numpy() # Convert to numpy array for consistency
 
-    # FIX: Adjusted final_label and confidence for single DL output
+   
     prob_ai = probs.item() # Get the single scalar probability
     prob_human = 1 - prob_ai
     
@@ -427,9 +425,9 @@ with st.expander('How models did overall'):
         {"Model": "SVM", "AUC": "0.99"},
         {"Model": "Decision Tree", "AUC": "0.85"},
         {"Model": "AdaBoost", "AUC": "0.99"},
-        {"Model": "CNN", "AUC": "0.98"}, # Placeholder AUC for CNN
-        {"Model": "LSTM", "AUC": "0.96"}, # Placeholder AUC for LSTM
-        {"Model": "RNN", "AUC": "0.51"}  # Placeholder AUC for RNN
+        {"Model": "CNN", "AUC": "0.98"}, 
+        {"Model": "LSTM", "AUC": "0.96"}, 
+        {"Model": "RNN", "AUC": "0.51"}  
     ]
     st.table(overall_scores)
     st.write(
@@ -440,7 +438,7 @@ with st.expander('How models did overall'):
 
 # other options download
 if st.checkbox('Show exact probabilities'):
-    # FIX: Adjust probability display for DL models (probs will be a single value)
+    # FIX: Adjust probability display for DL models 
     if current_model_info["type"] == "dl":
         prob_ai_display = probs.item() if isinstance(probs, np.ndarray) else probs
         prob_human_display = 1 - prob_ai_display
@@ -453,12 +451,12 @@ if st.button('Download Full Report PDF'):
         {"Model": "SVM", "AUC": "0.99"},
         {"Model": "Decision Tree", "AUC": "0.85"},
         {"Model": "AdaBoost", "AUC": "0.99"},
-        {"Model": "CNN", "AUC": "0.98"}, # Placeholder AUC for CNN
-        {"Model": "LSTM", "AUC": "0.96"}, # Placeholder AUC for LSTM
-        {"Model": "RNN", "AUC": "0.51"}  # Placeholder AUC for RNN
+        {"Model": "CNN", "AUC": "0.98"}, 
+        {"Model": "LSTM", "AUC": "0.96"}, 
+        {"Model": "RNN", "AUC": "0.51"}  
     ]
     
-    # FIX: Pass the correct probability format to make_pdf_report based on model type
+    
     if current_model_info["type"] == "dl":
         # For PDF, convert scalar AI prob back to [human_prob, ai_prob] format
         prob_ai_for_pdf = probs.item() if isinstance(probs, np.ndarray) else probs
