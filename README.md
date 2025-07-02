@@ -68,6 +68,6 @@ jupyter notebook notebooks/AI_vs_Human_Text_Classifierfinal.ipynb
 
 
 Problems I Had 
-	•	'csr_matrix' Error: sometimes a model gave a weird error with numbers I fixed it by making numbers normal first.
+	•	'csr_matrix' Error: sometimes a model gave a weird error with numbers I fixed it by making numbers normal first. Spent most of my time fixing app code and notebook code.
 	•	Making Explanations: it was hard to explain why AI guessed something I tried to make it sound like a person talking not a robot.
 	•	Keeping Code Neat: many files and folders sometimes messy learned to keep it organized.
